@@ -262,7 +262,7 @@ console.log(doc_name);
 
 			}
 
-			displayGroups(groups, 0, 100);
+			displayGroups(groups, revision_index_start-1, revision_index_end-1);
 
 			//===============================
 			var link = [], preSegment = [];
@@ -381,7 +381,7 @@ console.log(doc_name);
 
 				}
 
-				displayLinks(linkGroups, 0, 100);
+				displayLinks(linkGroups, revision_index_start-1, revision_index_end-2);
 			}
 		/* generate timescale historyflow instead of equaling distance */
 		else{

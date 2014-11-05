@@ -70,9 +70,15 @@
 				 	"margin-top",
 				 	margin.top
 				 	);
-				
+
 				/**
-				 * Slider
+				 * Initiate generating history flow
+				 **/
+				
+				historyflow(svg, width, height, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
+
+				/**
+				 * Slider to interact with historyflow
 				 **/
 				$("#slider").slider({
 				      range: true,
