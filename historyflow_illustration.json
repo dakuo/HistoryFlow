@@ -1,0 +1,15 @@
+{
+"docId":"1a"
+,"docName":"History Flow Illustration"
+,"authors":["alice","bob","mary"]
+,"revisions":[
+{"authorId":0,"revisionLength":400,"time":"2012-02-28T17:08:04.474","segments":[0]}
+,
+{"authorId":[0,2],"revisionLength":600,"time":"2012-02-28T17:15:24.562","segments":[0,1]}
+,
+{"authorId":1,"revisionLength":500,"time":"2012-02-28T17:16:34.481","segments":[3,2,1]}
+,
+{"authorId":2,"revisionLength":600,"time":"2012-02-28T17:17:24.857","segments":[4,5,6,3,1]}
+]
+,"segments":[{"segmentLength":400,"authorId":0,"fatherSegmentIndex":-1,"offsetInFatherSegment":0},{"segmentLength":200,"authorId":2,"fatherSegmentIndex":-1,"offsetInFatherSegment":0},{"segmentLength":200,"authorId":0,"fatherSegmentIndex":0,"offsetInFatherSegment":0},{"segmentLength":100,"authorId":1,"fatherSegmentIndex":-1,"offsetInFatherSegment":0},{"segmentLength":100,"authorId":0,"fatherSegmentIndex":2,"offsetInFatherSegment":0},{"segmentLength":100,"authorId":2,"fatherSegmentIndex":-1,"offsetInFatherSegment":0},{"segmentLength":100,"authorId":0,"fatherSegmentIndex":2,"offsetInFatherSegment":100}]
+}

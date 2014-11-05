@@ -1,0 +1,136 @@
+<html>
+<head>
+	<script src="jquery-1.11.1.min.js"></script>
+	<script src="d3.min.js"></script>
+	<script src="historyflow_illustration.js"></script>
+	
+	<script src="jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="jquery-ui.min.css">
+
+<script> 
+
+    var reader; //GLOBAL File Reader object for demo purpose only
+
+    /**
+     * Check for the various File API support.
+     */
+    function checkFileAPI() {
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+            reader = new FileReader();
+            return true; 
+        } else {
+            alert('The File APIs are not fully supported by your browser. Fallback required.');
+            return false;
+        }
+    }
+
+    /**
+     * read text input
+     */
+    function readText(filePath) {
+        var output = ""; //placeholder for text output
+        if(filePath.files && filePath.files[0]) {           
+            reader.onload = function (e) {
+                output = e.target.result;
+                
+                /*
+                 ** To Read in files
+                 */
+                 
+				var dataset = $.parseJSON(output);
+
+				/*
+				 ** To Prepare the SVG Convas for drawing the history flow
+				 */
+				 var width = 1280, height = 900, margin = {
+				 	'top' : 20,
+				 	'right' : 10,
+				 	'bottom' : 10,
+				 	'left' : 10
+				 };
+				
+				var slider = d3.select("#vizChart").append("div").attr("id","slider");
+				var amount_label = d3.select("#vizChart").append("label").attr("for","amount");
+				var amount = d3.select("#vizChart").append("input").attr("id","amount");
+
+				var svg = d3.select("#vizChart").append("svg")
+				 .attr(
+				 	"width",
+				 	width + margin.left
+				 	+ margin.right)
+				 .attr(
+				 	"height",
+				 	height + margin.top
+				 	+ margin.bottom)
+				 .attr(
+				 	"margin-left",
+				 	margin.left
+				 	)
+				 .attr(
+				 	"margin-top",
+				 	margin.top
+				 	);
+				
+				/**
+				 * Slider
+				 **/
+				$("#slider").slider({
+				      range: true,
+				      min: 1,
+				      max: dataset.revisions.length,
+				      values: [ 1, dataset.revisions.length>2 ? 2 : dataset.revisions.length ],
+				      slide: function( event, ui ) {
+				        $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+				        
+						/*
+						 * Draw the history flow
+						 */
+						historyflow(svg, width, height, dataset, ui.values[ 0 ] , ui.values[ 1 ], false);
+						/*
+						 * END of Drawing the history flow
+						 */
+				      }
+				});
+				
+				
+				/*
+				 ** Slider label
+				 */
+				$( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
+				      " - $" + $( "#slider-range" ).slider( "values", 1 ) );
+				
+            };//end onload()
+            reader.readAsText(filePath.files[0]);
+
+
+        }//end if html5 filelist support
+        else if(ActiveXObject && filePath) { //fallback to IE 6-8 support via ActiveX
+            try {
+                reader = new ActiveXObject("Scripting.FileSystemObject");
+                var file = reader.OpenTextFile(filePath, 1); //ActiveX File Object
+                output = file.ReadAll(); //text contents of file
+                file.Close(); //close file "input stream"
+                displayContents(output);
+            } catch (e) {
+                if (e.number == -2146827859) {
+                    alert('Unable to access local files due to browser security settings. ' + 
+                     'To overcome this, go to Tools->Internet Options->Security->Custom Level. ' + 
+                     'Find the setting for "Initialize and script ActiveX controls not marked as safe" and change it to "Enable" or "Prompt"'); 
+                }
+            }       
+        }
+        else { //this is where you could fallback to Java Applet, Flash or similar
+            return false;
+        }       
+        return true;
+    } 
+						
+</script>
+
+</head>
+<body onload="checkFileAPI()">
+	<input type="file" onchange='readText(this)' />
+        <br/>
+	<pre id="vizChart"></pre>
+</body>
+</html>
