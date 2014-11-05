@@ -40,7 +40,7 @@
 				var dataset = $.parseJSON(output);
 
 				/*
-				 ** To Prepare the SVG Convas for drawing the history flow
+				 ** To Prepare the SVG Convas Size and its outside Margin
 				 */
 				 var width = 1280, height = 900, margin = {
 				 	'top' : 20,
@@ -48,63 +48,13 @@
 				 	'bottom' : 10,
 				 	'left' : 10
 				 };
-				
-				var slider = d3.select("#vizChart").append("div").attr("id","slider");
-				var amount_label = d3.select("#vizChart").append("label").attr("for","amount");
-				var amount = d3.select("#vizChart").append("input").attr("id","amount");
-
-				var svg = d3.select("#vizChart").append("svg")
-				 .attr(
-				 	"width",
-				 	width + margin.left
-				 	+ margin.right)
-				 .attr(
-				 	"height",
-				 	height + margin.top
-				 	+ margin.bottom)
-				 .attr(
-				 	"margin-left",
-				 	margin.left
-				 	)
-				 .attr(
-				 	"margin-top",
-				 	margin.top
-				 	);
 
 				/**
 				 * Initiate generating history flow
 				 **/
 				
-				var hf = new historyflow(svg, width, height, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
+				var hf = new historyflow(d3.select("#vizChart"), width, height, margin, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
 
-				/**
-				 * Slider to interact with historyflow
-				 **/
-				$("#slider").slider({
-				      range: true,
-				      min: 1,
-				      max: dataset.revisions.length,
-				      values: [ 1, dataset.revisions.length>2 ? 2 : dataset.revisions.length ],
-				      slide: function( event, ui ) {
-				        $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
-				        
-						/*
-						 * Draw the history flow
-						 */
-						// historyflow(svg, width, height, dataset, ui.values[ 0 ] , ui.values[ 1 ], false);
-						hf.transitionFilter();
-						/*
-						 * END of Drawing the history flow
-						 */
-				      }
-				});
-				
-				
-				/*
-				 ** Slider label
-				 */
-				$( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
-				      " - $" + $( "#slider-range" ).slider( "values", 1 ) );
 				
             };//end onload()
             reader.readAsText(filePath.files[0]);

@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<title>D3 ParentNode Query</title>
+
+		<script src="d3.min.js"></script>
+	</head>
+
+	<body>
+		<h1>Vis Exploration - D3 - ParentNode Query</h1>
+
+		<div id="chart"></svg>
+	</body>
+
+<script type="text/javascript">
+
+	var data =  [{
+          key : 'likes', values : [
+            {key : 'blue-frog', value : 1}, 
+            {key : 'goodbye', value : 2}
+          ]
+        }, {
+	   key : 'dislikes', values : [
+            {key : 'blue-frog', value : 3},
+            {key : 'goodbye', value : 4 }
+          ]
+        }, {
+	   key : 'noopinion', values : [
+		{ key : 'blue-frog', value : 5},
+		{ key : 'stars', value : 6 }
+	  ]
+	}];
+
+	var root = d3.select("#chart");
+
+	var firstLevel = root.selectAll("ul")
+		.data(data)
+	.enter()
+		.append("ul")
+		.attr("class", function(d) { return d.key; });
+
+	// secondLevel is an array of selections, grouped by the different elements from firstLevel
+
+	var secondLevel = firstLevel.selectAll("li")
+		.data(function(d) { return d.values; })
+	.enter();
+
+	secondLevel
+		.append("li")
+		.text(function(d,i,j) { // can take a 3rd parameter - which specifies the selection group
+			// traverse to parentNode (HTML) via .parentNode
+			// traverse to our bound data via __data__
+
+			return secondLevel[j].parentNode.__data__.key + " ... " + d.key + " - " + d.value; 
+		});
+
+</script>
+
+</html>

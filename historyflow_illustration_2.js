@@ -30,8 +30,6 @@ function historyflow(vizChart, width, height, margin, dataset, revision_index_st
 	 		/*
 	 		 * Interact with the filter
 	 		 */
-	 		// historyflow(svg, width, height, dataset, ui.values[ 0 ] , ui.values[ 1 ], false);
-	 		// hf.transitionFilter();
 	 		transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
 	 		/*
 	 		 * END of Drawing the history flow
@@ -726,7 +724,20 @@ function historyflow(vizChart, width, height, margin, dataset, revision_index_st
 	// END of Time Scale Rendering
 
 	function transitionFilter(revision_start_index,revision_end_index) {
+		var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
+		var accumulateSegLength = 0;
+		
+		xScale.domain([revision_start_index-1,revision_end_index-1]);
+		yScale.domain([ 0, d3.max(revisions, function(d) {return d.revisionLength;}) ]);
 
+		groups.transition()
+		    .duration(500)
+		    .delay(function(d, i) { return i * 10; })
+		    .attr("x", function(d, i, j) { return x(d.x) + x.rangeBand() / n * j; })
+		    .attr("width", x.rangeBand() / n)
+		  .transition()
+		    .attr("y", function(d) { return y(d.y); })
+		    .attr("height", function(d) { return height - y(d.y); });
 	}
 }
 
