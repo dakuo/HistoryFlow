@@ -75,7 +75,7 @@
 				 * Initiate generating history flow
 				 **/
 				
-				historyflow(svg, width, height, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
+				var hf = new historyflow(svg, width, height, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
 
 				/**
 				 * Slider to interact with historyflow
@@ -91,7 +91,8 @@
 						/*
 						 * Draw the history flow
 						 */
-						historyflow(svg, width, height, dataset, ui.values[ 0 ] , ui.values[ 1 ], false);
+						// historyflow(svg, width, height, dataset, ui.values[ 0 ] , ui.values[ 1 ], false);
+						hf.transitionFilter();
 						/*
 						 * END of Drawing the history flow
 						 */
