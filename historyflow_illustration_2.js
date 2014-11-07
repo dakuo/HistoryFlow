@@ -16,7 +16,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 	** Variables
 	*/
 	// How many revisions will be redenered at the first time, if there are too many revisions
-	var initial_render_revision_amount = 2;
+	var initial_render_revision_amount = 3;
 	// Until which revision slice that the visualization has rendered
 	var rendered_revision_counter_end = initial_render_revision_amount;
 	// Author label bar Height
@@ -85,10 +85,10 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 
 
 	 			// then transition and animation
-	 			transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
+	 			// transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
 
 	 			// update the counter
-	 			rendered_revision_counter_end = ui.values[ 1 ];
+	 			// rendered_revision_counter_end = ui.values[ 1 ];
 	 		}
 	 		
 	 		/*
@@ -245,8 +245,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					return color(d);
 				})
 				.attr(
-					"transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight))
-						+ ")")
+					// "transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight)) + ")")
+					"transform", "translate( 0 ," + (chart_margin.top - (5*barHeight)) + ")")
 				//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
 				.on("click", function(d) {
@@ -270,9 +270,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					.style("fill",  function(){
 						return color(rev.authorId);
 					})
-					.attr(
-						"transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight))
-							+ ")")
+					.attr("transform", "translate( 0 ," + (chart_margin.top - (5*barHeight))+ ")")
+					// .attr("transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight))+ ")")
 					//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
 				.on("click", function() {
@@ -284,7 +283,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		// segment rectangles
 		groups = svg.selectAll("rectGroup").data(revisions).enter().append(
 			"g").attr("class", "rectGroup").attr("transform",
-			"translate(" + chart_margin.left + "," + chart_margin.top + ")");
+			// "translate(" + chart_margin.left + "," + chart_margin.top + ")");
+			"translate( 0 ," + chart_margin.top + ")");
 
 		var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
 		var accumulateSegLength = 0;
@@ -410,9 +410,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		var linkGroups = svg.selectAll("linkGroup").data(link).enter()
 			.append("g")
 			.attr("class", "linkGroup")
-			.attr("transform",
-				"translate(" + (chart_margin.left + xScale.rangeBand()) + ","
-					+ chart_margin.top + ")");
+			// .attr("transform", "translate(" + (chart_margin.left + xScale.rangeBand()) + ","+ chart_margin.top + ")");
+			.attr("transform", "translate(" +  xScale.rangeBand() + ","+ chart_margin.top + ")");
 
 		var linkRevisionIndex = -1;
 
@@ -485,7 +484,9 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		}
 		revisions = full_revisions.filter(filterRevisionArray);
 
-		xScale.domain([revision_start_index-1,revision_end_index-1]);
+		
+		xScale.domain( d3.range(revision_start_index - 1, revision_end_index, 1 ));
+		// xScale.domain([revision_start_index,revision_end_index]);
 		yScale.domain([ 0, d3.max(revisions, function(d) {return d.revisionLength;}) ]);
 
 		if (revision_end_index <= rendered_revision_counter_end) 
@@ -497,31 +498,46 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 				// var accumulateSegLength = 0;
 
 				// resize the segments
-				d3.selectAll(".segment").transition()
-					.duration(500)
-					.delay(function(d, i) { return i * 10; })
-					.attr("x", function(d, i, j) { 
+				d3.selectAll(".segment")
+					.attr("opacity", function(d, i, j){
+						var rev = $(this).attr("rev");
 						// show these revisions
-						if(j >= (revision_start_index - 1) && j<= ( revision_end_index - 1 )){
-							return xScale(j) + xScale.rangeBand() / revisions.length * j;
-						}
-						// don't show these revisions
-						else{
-							return -1000; // push it to the left side outside the screen
-						}
-					})
-					.attr("width", function(d, i, j){
-						// show these revisions
-						if(j >= (revision_start_index - 1) && j<= ( revision_end_index - 1 )){
-							return xScale.rangeBand() / revisions.length;
+						if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+							return 1;
 						}
 						// dont show these revisions
 						else{
 							return 0; // push it to 0 inch wide
-						}
-						
+						}	
 					})
-					.transition();
+					.transition()
+					.duration(500)
+					.delay(function(d, i) { return $(this).attr("rev") * 10; })
+					.attr("x", function(d, i, j) { 
+						var rev = $(this).attr("rev");
+						// show these revisions
+						if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+							return xScale( rev );
+						}
+						// don't show these revisions
+						else{
+							
+						}
+					})
+					.transition()
+					.attr("width", function(d, i, j){
+						var rev = $(this).attr("rev");
+						// show these revisions
+						if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+							return xScale.rangeBand();
+						}
+						// dont show these revisions
+						else{
+							 return 0;
+						}
+					})
+					
+					;
 					//.attr("y", function(d) { return yScale(d.length); });
 
 
@@ -529,15 +545,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 				d3.selectAll(".link").transition()
 					.duration(500)
 					.delay(function(d, i) { return i * 10; })
-					.attr("x", function(d, i, j) { 
-						
-						return -1000; // push it to the left side outside the screen
-						
-					})
-					.attr("width", function(d, i, j){
-						
-						return 0; // push it to 0 inch wide
-						
+					.attr("opacity", function(d, i, j) { 
+						return 0; // invisible
 					})
 					.transition();
 		} 
