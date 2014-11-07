@@ -2,7 +2,7 @@
 <head>
 	<script src="jquery-1.11.1.min.js"></script>
 	<script src="d3.min.js"></script>
-	<script src="historyflow_illustration.js"></script>
+	<script src="historyflow_illustration_2.js"></script>
 	
 	<script src="jquery-ui.min.js"></script>
 	<link rel="stylesheet" href="jquery-ui.min.css">
@@ -52,9 +52,8 @@
 				/**
 				 * Initiate generating history flow
 				 **/
-				
-				var hf = new historyflow(d3.select("#vizChart"), width, height, margin, dataset, 1 , dataset.revisions.length>2 ? 2 : dataset.revisions.length , false);
-
+				var dv = new DocuViz(d3.select("#vizChart"), width, height, margin, dataset);
+				dv.renderHistoryFlow();
 				
             };//end onload()
             reader.readAsText(filePath.files[0]);
