@@ -16,7 +16,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 	** Variables
 	*/
 	// How many revisions will be redenered at the first time, if there are too many revisions
-	var initial_render_revision_amount = 3;
+	var initial_render_revision_amount = 4;
 	// Until which revision slice that the visualization has rendered
 	var rendered_revision_counter_end = initial_render_revision_amount;
 	// Author label bar Height
@@ -208,13 +208,18 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 
 		xScale = d3.scale.ordinal().domain(d3.range(revisions.length)).rangeRoundBands([ 0, width - chart_margin.left - chart_margin.right ], 0.5);
 
-		// time
-		var dateLabel2 = svg.selectAll("dateLabel2").data(revisions).enter()
-		.append("text").attr("x", function(d, i) {
+		// time label on top of each revision slice column
+		var time_label = svg.selectAll("time_label").data(revisions).enter()
+		.append("text")
+		.attr("class", "time_label")
+		.attr("x", function(d, i) {
 			return 0;
-		}).attr("y", function(d, i) {
+		})
+		.attr("y", function(d, i) {
 			return xScale(i);
-		}).attr("font-family", "sans-serif")
+		})
+		.attr("rev", function(d, i) {return i + revision_start_index - 1;})
+		.attr("font-family", "sans-serif")
 		.attr("font-size", "14px")
 		.attr("fill", "black")
 		.html(
@@ -231,6 +236,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 			//deal with multi author
 			if($.isArray(rev.authorId)){
 				svg.selectAll("authorLabel_"+index).data(rev.authorId).enter().append("rect")
+				.attr("class", "author_label")
 				.attr("x", function() {
 					return xScale(index);
 				})
@@ -245,7 +251,6 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					return color(d);
 				})
 				.attr(
-					// "transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight)) + ")")
 					"transform", "translate( 0 ," + (chart_margin.top - (5*barHeight)) + ")")
 				//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
@@ -259,6 +264,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 			//deal with the old version single author heritage
 			else{
 					svg.append("rect")
+					.attr("class", "author_label")
 					.attr("x", function() {
 						return xScale(index);
 					})
@@ -271,7 +277,6 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 						return color(rev.authorId);
 					})
 					.attr("transform", "translate( 0 ," + (chart_margin.top - (5*barHeight))+ ")")
-					// .attr("transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight))+ ")")
 					//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
 				.on("click", function() {
@@ -283,7 +288,6 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		// segment rectangles
 		groups = svg.selectAll("rectGroup").data(revisions).enter().append(
 			"g").attr("class", "rectGroup").attr("transform",
-			// "translate(" + chart_margin.left + "," + chart_margin.top + ")");
 			"translate( 0 ," + chart_margin.top + ")");
 
 		var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
@@ -394,7 +398,6 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 							// means it has a father, but it's not in previous version,
 							alert("link compute error" + preIndex + " "
 								+ segments[newSegment[k]]);
-							//console.log(segments[newSegment[k]]);
 						}
 					}
 				}
@@ -410,10 +413,12 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		var linkGroups = svg.selectAll("linkGroup").data(link).enter()
 			.append("g")
 			.attr("class", "linkGroup")
-			// .attr("transform", "translate(" + (chart_margin.left + xScale.rangeBand()) + ","+ chart_margin.top + ")");
-			.attr("transform", "translate(" +  xScale.rangeBand() + ","+ chart_margin.top + ")");
+			.attr("transform", "translate( 0 ,"+ chart_margin.top + ")");
 
+		// For d
 		var linkRevisionIndex = -1;
+		// For rev
+		var linkRevisionIndex2 = -1;
 
 		linkGroups
 			.selectAll("link")
@@ -435,7 +440,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					if (d[1] == -1) {
 						return "";
 					} else {
-						x0 = xScale(linkRevisionIndex);
+						x0 = xScale(linkRevisionIndex) + xScale.rangeBand();
 						var tempSegments1 = revisions[linkRevisionIndex].segments;
 						var tempSegments2 = revisions[linkRevisionIndex + 1].segments;
 
@@ -468,6 +473,12 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 						+ "Z";
 					}
 			})
+			.attr("rev", function(d, i){
+				if (i == 0) {
+					linkRevisionIndex2++;
+				}
+				return linkRevisionIndex2;
+			})
 			.attr("fill", function(d, i) {
 				if (d[1] != -1)
 					return color(segments[d[1]].authorId);
@@ -497,8 +508,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 				// var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
 				// var accumulateSegLength = 0;
 
-				// resize the segments
-				d3.selectAll(".segment")
+				// resize the segments, and author_label
+				d3.selectAll(".segment,.author_label")
 					.attr("opacity", function(d, i, j){
 						var rev = $(this).attr("rev");
 						// show these revisions
@@ -535,20 +546,76 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 						else{
 							 return 0;
 						}
-					})
-					
-					;
+					});
 					//.attr("y", function(d) { return yScale(d.length); });
 
-
-				// TODO resize the links, for now, just invisible them
-				d3.selectAll(".link").transition()
+				// resize the links, for now, just invisible them
+				var link_d_pattern = /(M\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*Z)/;
+				d3.selectAll(".link")
+					.transition()
 					.duration(500)
-					.delay(function(d, i) { return i * 10; })
+					.delay(function(d, i) { return $(this).attr("rev") * 10; })
 					.attr("opacity", function(d, i, j) { 
-						return 0; // invisible
+						var rev = $(this).attr("rev");
+						// show these revisions
+						if(rev >= (revision_start_index - 1) && rev< ( revision_end_index - 1 )){
+							return 0.8;
+						}
+						// dont show these revisions
+						else{
+							return 0; // push it to 0 inch wide
+						}
 					})
-					.transition();
+					.attr("d",
+						function(d, i) {
+							var rev = $(this).attr("rev")
+
+							if(rev >= (revision_start_index - 1) && rev< ( revision_end_index - 1 )){
+								// If d[1] = -1 means it has only an empty link (-1,-1)
+								if (d[1] == -1) {
+									return "";
+								} else {
+									old_d = $(this).attr("d");
+									rev = $(this).attr("rev");
+									x0 = xScale(rev) + + xScale.rangeBand();
+									x1 = x0 + xScale.rangeBand();
+									new_d = old_d.replace(link_d_pattern, "$1" + x0 + "$3" + x0 + "$5" + x1 + "$7" + x1 + "$9");
+									return new_d;
+								}
+							}
+							else{
+								return $(this).attr("d");
+							}
+						}
+					);
+
+				// resize the time_label
+				d3.selectAll(".time_label")
+					.attr("opacity", function(d, i, j){
+						var rev = $(this).attr("rev");
+						// show these revisions
+						if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+							return 1;
+						}
+						// dont show these revisions
+						else{
+							return 0; // push it to 0 inch wide
+						}	
+					})
+					.transition()
+					.duration(500)
+					.delay(function(d, i) { return $(this).attr("rev") * 10; })
+					.attr("y", function(d, i, j) { 
+						var rev = $(this).attr("rev");
+						// show these revisions
+						if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+							return xScale( rev );
+						}
+						// don't show these revisions
+						else{
+							
+						}
+					});
 		} 
 		else
 		{
@@ -586,7 +653,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 // 		var barWidth = 5;
 
 // 		// time
-// 		var dateLabel2 = svg.selectAll("dateLabel2").data(revisions).enter()
+// 		var time_label = svg.selectAll("time_label").data(revisions).enter()
 // 		.append("text")
 // 		.attr("x", function(d, i) {
 // 			return 0;
