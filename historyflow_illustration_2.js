@@ -16,14 +16,14 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 	** Variables
 	*/
 	// How many revisions will be redenered at the first time, if there are too many revisions
-	var initial_render_revision_amount = 4;
+	var initial_render_revision_amount = 50;
 	// Until which revision slice that the visualization has rendered
 	var rendered_revision_counter_end = initial_render_revision_amount;
 	// Author label bar Height
 	var barHeight = 10;
 	// Color scheme 10 categories	
 	var color = d3.scale.category10();
-	// Inside margin for author labels, axis, and legend
+	// Inside chart margins: top for the author labels, left for the y-axis, bottom for the legend
 	var chart_margin = {
 	 	'top' : 150,
 	 	'right' : 20,
@@ -73,34 +73,15 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 	 		/*
 	 		** Interact with the filter
 	 		*/
-
-	 		// If there's no new revision slice that hasn't been rendered
-	 		if(ui.values[ 1 ] <= rendered_revision_counter_end){
-	 			//Do nothing about rendering, just transition and animation
-	 			transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
-	 		}
-	 		// If we need to render new revision slices
-	 		else{
-	 			// Render the non-rendered revision slices first, set them invisible
-
-
-	 			// then transition and animation
-	 			// transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
-
-	 			// update the counter
-	 			// rendered_revision_counter_end = ui.values[ 1 ];
-	 		}
+ 			transitionFilter(ui.values[ 0 ] , ui.values[ 1 ]);
 	 		
-	 		/*
-	 		 * END of Drawing the history flow
-	 		 */
 	    }
 	});
 	
 	/*
 	** Slider label
 	*/
-	$( "#revision_index" ).val( "Revision: " + $( "#slider" ).slider( "values", 0 ) +
+	$( "#revision_index" ).attr("style","height:26px;width:150px;").val( "Revision: " + $( "#slider" ).slider( "values", 0 ) +
 	       " - Revision: " + $( "#slider" ).slider( "values", 1 ) );
 	
 	//some common visualization area, e.g., legend, authorlist
@@ -120,17 +101,50 @@ function DocuViz(vizChart, width, height, margin, dataset) {
     $('#authorlabel_author_list').multiselect("refresh"); 
     */
 
-    var titleText = svg.append("text").attr("x",11).attr("y",16).attr("font-family", "sans-serif").attr("font-size", "20px").text(""+doc_name);
-
+    
     var xScale;
     var yScale;
+    var yAxis;
     var groups;
     var linkGroups;
+
+    // the document title
+    var titleText = svg.append("text").attr("x",11).attr("y",16).attr("font-family", "sans-serif").attr("font-size", "20px").text(""+doc_name);
+
+    //  author contribution in the final revision
+    var authorContribution = [];
+    var legendText
+
+	// the legend
+	var legend = svg.selectAll("authorGroup").data(authors).enter()
+	.append("rect")
+	.attr("class", "author_legend").attr("x", 0)
+	.attr("y",
+		function(d, i) {
+			return i * (barHeight*4 + 5 );
+		})
+	.attr("width", 40*4)
+	.attr("height", barHeight*4).attr(
+		"fill", function(d, i) {
+			return color(i);
+		})
+	.attr(
+		"transform",
+		"translate(" + (chart_margin.left )+ ","
+			+ (height - chart_margin.bottom + 5 ) + ")")
+ 	//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
+	/*
+	.on("click", function(d) {
+		$('#addauthor_doc_id').val(doc_id);
+		$('#addauthor_dialog_form').dialog( "open" );
+	});
+	*/;
+
 	/*
 	** The function to render a historyflow, default is equal scale
 	*/
 
-	this.renderHistoryFlow = function (revision_start_index, revision_end_index, timescale_flag ){
+	var renderHistoryFlow = function (revision_start_index, revision_end_index, timescale_flag ){
 		revision_start_index = typeof revision_start_index !== 'undefined' ? revision_start_index : 1;
 		revision_end_index = typeof revision_end_index !== 'undefined' ? revision_end_index : rendered_revision_counter_end;
 
@@ -147,53 +161,29 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 				return d.revisionLength;
 			}) ]).range([ 0, height - chart_margin.top - chart_margin.bottom ]);
 
-		var yAxis = d3.svg.axis().scale(yScale).orient("right").ticks(10).tickFormat(d3.format("d"));
+		// yAxis
+		yAxis = d3.svg.axis().scale(yScale).orient("right").ticks(10).tickFormat(d3.format("d"));
 		svg.append("g").attr("class", "axis").attr("transform",
-			"translate(" + (chart_margin.left - 55) + "," + chart_margin.top + ")")
+			"translate( 0 ," + chart_margin.top + ")")
 		.call(yAxis);
 
 		// the yAxis ending tick
-		svg.append("text").attr("transform",
-			"translate(" + 14 + "," + (height-chart_margin.bottom+4) + ")").text(d3.max(revisions, function(d) {
+		svg.append("text").attr("class","ending_tick").attr("transform",
+			"translate( 9," + (height-chart_margin.bottom + 4) + ")").text(d3.max(revisions, function(d) {
 				return d.revisionLength;
 			}));
 
-		var legend = svg.selectAll("authorGroup").data(authors).enter()
-		.append("rect")
-		.attr("class", "author_legend").attr("x", 0)
-		.attr("y",
-			function(d, i) {
-				return i * (barHeight*4 + 5 );
-			})
-		.attr("width", 40*4)
-		.attr("height", barHeight*4).attr(
-			"fill", function(d, i) {
-				return color(i);
-			})
-		.attr(
-			"transform",
-			"translate(" + (chart_margin.left )+ ","
-				+ (height - chart_margin.bottom ) + ")")
-	 	//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
-		/*
-		.on("click", function(d) {
-			$('#addauthor_doc_id').val(doc_id);
-			$('#addauthor_dialog_form').dialog( "open" );
-		});
-		*/;
-
 		//  author contribution in the final revision
-		var authorContribution = [];
+		// TODO
 		for (var i=0; i< authors.length; i++){
 			authorContribution[i]=0;
 		}
-		// temporary variable
 		revisions[revisions.length-1].segments.forEach(function(element){
 			authorContribution[segments[element].authorId] += segments[element].segmentLength;
 		});
 
-		var legendText = svg.selectAll("authorText").data(authors).enter()
-		.append("text").attr("x", 40*4 + 10).attr("y", function(d, i) {
+		legendText = svg.selectAll("authorText").data(authors).enter()
+		.append("text").attr("class", "legend_text").attr("x", 40*4 + 10).attr("y", function(d, i) {
 			return i * (barHeight*4 + 5);
 		})
 		.attr("font-family", "sans-serif").attr("font-size", "38px")
@@ -209,6 +199,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		xScale = d3.scale.ordinal().domain(d3.range(revisions.length)).rangeRoundBands([ 0, width - chart_margin.left - chart_margin.right ], 0.5);
 
 		// time label on top of each revision slice column
+		// TODO
 		var time_label = svg.selectAll("time_label").data(revisions).enter()
 		.append("text")
 		.attr("class", "time_label")
@@ -226,7 +217,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 			function(d) {
 				return d.time.substring(5, 10) + " " + d.time.substring(11, 16);
 			})
-		.attr("transform","translate(" + (chart_margin.left + 15) + "," + (chart_margin.top- (5*barHeight)) + ") rotate(-90)");
+		.attr("transform","translate(" + (chart_margin.left + 10) + "," + (chart_margin.top- (5*barHeight)) + ") rotate(-90)");
 
 		/**
 		 * Draw the multi author labl on top of each one
@@ -251,7 +242,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					return color(d);
 				})
 				.attr(
-					"transform", "translate( 0 ," + (chart_margin.top - (5*barHeight)) + ")")
+					"transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight)) + ")")
 				//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
 				.on("click", function(d) {
@@ -276,7 +267,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 					.style("fill",  function(){
 						return color(rev.authorId);
 					})
-					.attr("transform", "translate( 0 ," + (chart_margin.top - (5*barHeight))+ ")")
+					.attr("transform", "translate(" + chart_margin.left + "," + (chart_margin.top - (5*barHeight))+ ")")
 					//work on the "authors being there without editing anything" issue, the change will only effect the author label. code by Dakuo
 				/*
 				.on("click", function() {
@@ -288,7 +279,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		// segment rectangles
 		groups = svg.selectAll("rectGroup").data(revisions).enter().append(
 			"g").attr("class", "rectGroup").attr("transform",
-			"translate( 0 ," + chart_margin.top + ")");
+			"translate(" + chart_margin.left + "," + chart_margin.top + ")");
 
 		var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
 		var accumulateSegLength = 0;
@@ -312,6 +303,12 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 				if (i == 0)
 					revisionIndex2++;
 				return revisionIndex2;
+			})
+			.attr("segment_length", function(d){
+				if (d == -1)
+					return 0;
+				else
+					return segments[d].segmentLength;
 			})
 			.attr(
 				"y",
@@ -410,10 +407,10 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 
 
 		// Link rectangles
-		var linkGroups = svg.selectAll("linkGroup").data(link).enter()
+		linkGroups = svg.selectAll("linkGroup").data(link).enter()
 			.append("g")
 			.attr("class", "linkGroup")
-			.attr("transform", "translate( 0 ,"+ chart_margin.top + ")");
+			.attr("transform", "translate(" + chart_margin.left + ","+ chart_margin.top + ")");
 
 		// For d
 		var linkRevisionIndex = -1;
@@ -500,13 +497,21 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		// xScale.domain([revision_start_index,revision_end_index]);
 		yScale.domain([ 0, d3.max(revisions, function(d) {return d.revisionLength;}) ]);
 
+		/*
+		** A few clean-up works
+		*/
+
+		// clear legend text
+		d3.selectAll(".legend_text").remove(); 
+		// clear y-axis
+		d3.selectAll(".axis").remove();
+		// clear y-axis ending tick
+		d3.selectAll(".ending_tick").remove();
+
+
 		if (revision_end_index <= rendered_revision_counter_end) 
 		{
-				// just resize the display
-
-				// Resize the display
-				// var revisionIndex = -1, revisionIndex2 = -1; //one for calculating x; one for calculating rev_index
-				// var accumulateSegLength = 0;
+				// only resize the display
 
 				// resize the segments, and author_label
 				d3.selectAll(".segment,.author_label")
@@ -521,9 +526,9 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 							return 0; // push it to 0 inch wide
 						}	
 					})
-					.transition()
-					.duration(500)
-					.delay(function(d, i) { return $(this).attr("rev") * 10; })
+					// .transition()
+					// .duration(250)
+					// .delay(function(d, i) { return $(this).attr("rev") * 10; })
 					.attr("x", function(d, i, j) { 
 						var rev = $(this).attr("rev");
 						// show these revisions
@@ -535,7 +540,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 							
 						}
 					})
-					.transition()
+					// .transition()
 					.attr("width", function(d, i, j){
 						var rev = $(this).attr("rev");
 						// show these revisions
@@ -547,14 +552,18 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 							 return 0;
 						}
 					});
-					//.attr("y", function(d) { return yScale(d.length); });
 
-				// resize the links, for now, just invisible them
+				// TODO Adjust segments Height and Y position
+				d3.selectAll(".segment")
+					// .attr("y", )
+					.attr("height", function(d) { return yScale( $(this).attr("segment_length") ); });
+
+				// resize the links
 				var link_d_pattern = /(M\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*Z)/;
 				d3.selectAll(".link")
-					.transition()
-					.duration(500)
-					.delay(function(d, i) { return $(this).attr("rev") * 10; })
+					// .transition()
+					// .duration(750)
+					// .delay(function(d, i) { return $(this).attr("rev") * 10; })
 					.attr("opacity", function(d, i, j) { 
 						var rev = $(this).attr("rev");
 						// show these revisions
@@ -563,7 +572,7 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 						}
 						// dont show these revisions
 						else{
-							return 0; // push it to 0 inch wide
+							return 0; 
 						}
 					})
 					.attr("d",
@@ -599,12 +608,12 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 						}
 						// dont show these revisions
 						else{
-							return 0; // push it to 0 inch wide
+							return 0; 
 						}	
 					})
-					.transition()
-					.duration(500)
-					.delay(function(d, i) { return $(this).attr("rev") * 10; })
+					// .transition()
+					// .duration(250)
+					// .delay(function(d, i) { return $(this).attr("rev") * 10; })
 					.attr("y", function(d, i, j) { 
 						var rev = $(this).attr("rev");
 						// show these revisions
@@ -616,11 +625,166 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 							
 						}
 					});
-		} 
-		else
-		{
-				// need to render the un-rendered slices before resize the display
 
+				// resize yAxis
+				yAxis = d3.svg.axis().scale(yScale).orient("right").ticks(10).tickFormat(d3.format("d"));
+				svg.append("g").attr("class", "axis").attr("transform",
+					"translate( 0 ," + chart_margin.top + ")")
+				.call(yAxis);
+
+				// re-calculate the yAxis ending tick
+				svg.append("text").attr("class","ending_tick").attr("transform",
+					"translate( 9," + (height-chart_margin.bottom + 4) + ")").text(d3.max(revisions, function(d) {
+						return d.revisionLength;
+					}));
+
+				// re-calculate author contribution in the final revision
+				// TODO
+				for (var i=0; i< authors.length; i++){
+					authorContribution[i]=0;
+				}
+				revisions[revisions.length-1].segments.forEach(function(element){
+					authorContribution[segments[element].authorId] += segments[element].segmentLength;
+				});
+
+				legendText = svg.selectAll("authorText").data(authors).enter()
+				.append("text").attr("class", "legend_text").attr("x", 40*4 + 10).attr("y", function(d, i) {
+					return i * (barHeight*4 + 5);
+				})
+				.attr("font-family", "sans-serif").attr("font-size", "38px")
+				.attr("fill", "black").text(
+					function(d, i) {
+						return d + " " + authorContribution[i];
+					})
+				.attr(
+					"transform",
+					"translate(" + (chart_margin.left )
+						+ "," + (height - chart_margin.bottom + (barHeight*4 ) ) + ")");
+		}
+		// need to render the un-rendered slices before resize the display
+		else
+		{	
+			/*
+			** TODO
+			** render the new revision slices
+			*
+			renderHistoryFlow(rendered_revision_counter_end + 1, revision_end_index);
+			// change the counter
+			rendered_revision_counter_end = revision_end_index;
+			/*
+			** resize the segments, and author_label
+			*/
+			d3.selectAll(".segment,.author_label")
+				.attr("opacity", function(d, i, j){
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+						return 1;
+					}
+					// dont show these revisions
+					else{
+						return 0; // push it to 0 inch wide
+					}	
+				})
+				// .transition()
+				// .duration(250)
+				// .delay(function(d, i) { return $(this).attr("rev") * 10; })
+				.attr("x", function(d, i, j) { 
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+						return xScale( rev );
+					}
+					// don't show these revisions
+					else{
+						
+					}
+				})
+				// .transition()
+				.attr("width", function(d, i, j){
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+						return xScale.rangeBand();
+					}
+					// dont show these revisions
+					else{
+						 return 0;
+					}
+				});
+				//.attr("y", function(d) { return yScale(d.length); });
+
+			/*
+			** resize the link
+			*/
+			var link_d_pattern = /(M\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*\s)(\d+\.?\d*)(,\d+\.?\d*Z)/;
+			d3.selectAll(".link")
+				// .transition()
+				// .duration(750)
+				// .delay(function(d, i) { return $(this).attr("rev") * 10; })
+				.attr("opacity", function(d, i, j) { 
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev< ( revision_end_index - 1 )){
+						return 0.8;
+					}
+					// dont show these revisions
+					else{
+						return 0; 
+					}
+				})
+				.attr("d",
+					function(d, i) {
+						var rev = $(this).attr("rev")
+
+						if(rev >= (revision_start_index - 1) && rev< ( revision_end_index - 1 )){
+							// If d[1] = -1 means it has only an empty link (-1,-1)
+							if (d[1] == -1) {
+								return "";
+							} else {
+								old_d = $(this).attr("d");
+								rev = $(this).attr("rev");
+								x0 = xScale(rev) + + xScale.rangeBand();
+								x1 = x0 + xScale.rangeBand();
+								new_d = old_d.replace(link_d_pattern, "$1" + x0 + "$3" + x0 + "$5" + x1 + "$7" + x1 + "$9");
+								return new_d;
+							}
+						}
+						else{
+							return $(this).attr("d");
+						}
+					}
+				);
+
+			/*
+			** resize the time_label
+			*/
+			d3.selectAll(".time_label")
+				.attr("opacity", function(d, i, j){
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+						return 1;
+					}
+					// dont show these revisions
+					else{
+						return 0; 
+					}	
+				})
+				// .transition()
+				// .duration(250)
+				// .delay(function(d, i) { return $(this).attr("rev") * 10; })
+				.attr("y", function(d, i, j) { 
+					var rev = $(this).attr("rev");
+					// show these revisions
+					if(rev >= (revision_start_index - 1) && rev<= ( revision_end_index - 1 )){
+						return xScale( rev );
+					}
+					// don't show these revisions
+					else{
+						
+					}
+				});
 		}
 	}
 
@@ -635,6 +799,8 @@ function DocuViz(vizChart, width, height, margin, dataset) {
 		timescale_flag = typeof timescale_flag !== 'undefined' ? timescale_flag : false;
 
 	}
+
+	renderHistoryFlow();
 
 }
 

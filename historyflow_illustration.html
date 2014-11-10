@@ -49,11 +49,11 @@
 				 	'left' : 10
 				 };
 
-				/**
-				 * Initiate generating history flow
-				 **/
+				/*
+				** Initiate generating history flow
+				*/
+                $("#vizChart").empty();
 				var dv = new DocuViz(d3.select("#vizChart"), width, height, margin, dataset);
-				dv.renderHistoryFlow();
 				
             };//end onload()
             reader.readAsText(filePath.files[0]);

@@ -23,7 +23,7 @@ function historyflow(vizChart, width, height, margin, dataset, revision_index_st
 	       range: true,
 	       min: 1,
 	       max: revisions.length,
-	       values: [ 1, revisions.length>2 ? 2 : revisions.length ],
+	       values: [ 1, revisions.length>25 ? 25 : revisions.length ],
 	       slide: function( event, ui ) {
 	         $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
 	         
